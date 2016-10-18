@@ -1,0 +1,7 @@
+{
+  "dockerddns": {
+    "dnsserver" : "my.dns.server",
+    "keyname"   : "my.dns.key",
+    "zonename"  : "dynamic.mydomain.ntld"
+  }
+}
