@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 #
 # Marcelo Bartsch <spam-mb+github@bartsch.cl>
-# Release under GPLv2
 #
 import logging
 import docker
