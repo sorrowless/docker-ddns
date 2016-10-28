@@ -11,7 +11,7 @@ import dns.query
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
 
-configfile = 'dockerddns.json'
+configfile = 'docker-ddns.json'
 tsigfile = 'secrets.json'
 tsighandle = open(tsigfile, mode='r')
 logging.debug('Loading DNS Key Data')
