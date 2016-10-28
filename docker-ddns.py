@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-#
-# Marcelo Bartsch <spam-mb+github@bartsch.cl>
-#
 import logging
 import docker
 import json
@@ -12,9 +9,9 @@ import dns.update
 import dns.query
 
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
 
-configfile = 'docker-ddns.json'
+configfile = 'dockerddns.json'
 tsigfile = 'secrets.json'
 tsighandle = open(tsigfile, mode='r')
 logging.debug('Loading DNS Key Data')
@@ -64,11 +61,21 @@ def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=6
         update.delete(event['hostname'])
     try:
       response = dns.query.tcp(update, dnsserver, timeout=10)
+    except (socket.error, dns.exception.Timeout):
+      logging.debug('Timeout updating DNS')
+      response = 'Timeout Socket'
+      pass
+    except dns.query.UnexpectedSource:
+      logging.debug('Unexpected Source')
+      response = 'UnexpectedSource'
+      pass
     except dns.tsig.PeerBadKey:
       logging.debug('Bad Key for DNS, Check your config files')
       response = "BadKey"
       pass
 
+    if response.rcode() != 0: 
+      logging.error("[%s] Error Reported while updating %s (%s/%s)" % (event['name'],event['hostname'],dns.rcode.to_text(response.rcode()), response.rcode()))
 
 def process():
     containerinfo = {}
