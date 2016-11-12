@@ -9,7 +9,7 @@ import dns.update
 import dns.query
 
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
 
 configfile = 'docker-ddns.json'
 tsigfile = 'secrets.json'
