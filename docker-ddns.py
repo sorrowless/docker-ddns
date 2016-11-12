@@ -9,7 +9,7 @@ import dns.update
 import dns.query
 
 
-logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
 
 configfile = 'docker-ddns.json'
 tsigfile = 'secrets.json'
@@ -54,23 +54,23 @@ def container_info(containerId):
 def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=60):
     update = dns.update.Update(config['dockerddns']['zonename'], keyring=keyring, keyname=config['dockerddns']['keyname'])
     if (action == 'start' and event['ip'] != '0.0.0.0' ):
-        logging.debug('[%s] Updating dns %s , setting %s.%s to %s' % (event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'],event['ip']))
+        logging.info('[%s] Updating dns %s , setting %s.%s to %s' % (event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'],event['ip']))
         update.replace(event['hostname'], ttl, 'A', event['ip'])
     elif (action == 'die' ):
-        logging.debug('[%s] Removing entry for %s.%s in %s' % (event['name'], event['hostname'], config['dockerddns']['zonename'], dnsserver))
+        logging.info('[%s] Removing entry for %s.%s in %s' % (event['name'], event['hostname'], config['dockerddns']['zonename'], dnsserver))
         update.delete(event['hostname'])
     try:
       response = dns.query.tcp(update, dnsserver, timeout=10)
     except (socket.error, dns.exception.Timeout):
-      logging.debug('Timeout updating DNS')
+      logging.error('Timeout updating DNS')
       response = 'Timeout Socket'
       pass
     except dns.query.UnexpectedSource:
-      logging.debug('Unexpected Source')
+      logging.error('Unexpected Source')
       response = 'UnexpectedSource'
       pass
     except dns.tsig.PeerBadKey:
-      logging.debug('Bad Key for DNS, Check your config files')
+      logging.error('Bad Key for DNS, Check your config files')
       response = "BadKey"
       pass
 
