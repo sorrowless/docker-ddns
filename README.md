@@ -1,5 +1,5 @@
 
-# Hot To Wun
+# Hot To Run
 docker run -it --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /myconfiglocation/secrets.json:/ddns/secrets.json \
