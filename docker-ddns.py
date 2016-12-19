@@ -51,7 +51,7 @@ def container_info(containerId):
     return container
 
 
-def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=60):
+def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=60,port=config['dockerddns']['dnsport']):
     update = dns.update.Update(config['dockerddns']['zonename'], keyring=keyring, keyname=config['dockerddns']['keyname'])
     if (action == 'start' and event['ip'] != '0.0.0.0' ):
         logging.info('[%s] Updating dns %s , setting %s.%s to %s' % (event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'],event['ip']))
@@ -60,7 +60,7 @@ def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=6
         logging.info('[%s] Removing entry for %s.%s in %s' % (event['name'], event['hostname'], config['dockerddns']['zonename'], dnsserver))
         update.delete(event['hostname'])
     try:
-      response = dns.query.tcp(update, dnsserver, timeout=10)
+      response = dns.query.tcp(update, dnsserver, timeout=10,port=port)
     except (socket.error, dns.exception.Timeout):
       logging.error('Timeout updating DNS')
       response = 'Timeout Socket'
