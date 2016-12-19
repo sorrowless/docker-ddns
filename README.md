@@ -7,11 +7,36 @@ docker run -it --rm \
 	 mbartsch/ddns:0
 
 # Config Needed
+
+## docker-ddns.json 
+
+{
+  "dockerddns": {
+    "dnsserver" : "my.dns.server",
+    "dnsport"   : 53,
+    "keyname"   : "my.dns.key",
+    "zonename"  : "dynamic.mydomain.ntld"
+  }
+}
+
+dnsserver = hostname of bind
+dnsport   = port used by bind , you can change it if 53 is blocked
+keyname   = the keyname
+zonename  = ddns zone
+
+## secrets.json
+
+
+{"my.key.file":"base64_encrypted_key"}
+
+left side  = key name as in named.conf
+right side = mykeyfilesecret in base64 , same as in named.conf
+ 
 ## bind setup
 in your named.conf you must have:
 
 ```
-key "my.key.file." {
+key "my.key.file" {
   algorithm hmac-md5;
   secret "mykeyfilesecret";
 };
@@ -19,7 +44,7 @@ key "my.key.file." {
 zone "myddnszone.mydomain.xtld" IN {
         type master;
         file "dynamic/myddnszone.mydomain.xtld.zone";
-        allow-update { key "my.key.file."; };
+        allow-update { key "my.key.file"; };
 };
 ```
 
