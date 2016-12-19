@@ -3,6 +3,7 @@ import logging
 import docker
 import json
 import sys
+import socket
 import dns
 import dns.tsigkeyring
 import dns.update
