@@ -2,6 +2,7 @@
   "dockerddns": {
     "dnsserver" : "my.dns.server",
     "dnsport"   : 53,
+    "ttl"       : 60,
     "keyname"   : "my.dns.key",
     "zonename"  : "dynamic.mydomain.ntld"
   }
