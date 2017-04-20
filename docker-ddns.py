@@ -38,15 +38,20 @@ def startup():
 def container_info(containerId):
     container = {}
     inspect = client.inspect_container(containerId)
-    json.dumps(inspect)
+    #json.dumps(inspect)
     networkmode = str(inspect["HostConfig"]["NetworkMode"])
     container['hostname'] = inspect["Config"]["Hostname"]
     container['name'] = inspect["Name"].split('/', 1)[1]
+    if ("services" in inspect["Config"]["Labels"]):
+      container['srvrecords'] = inspect["Config"]["Labels"]["services"]
+      print("%s\n" % (container['srvrecords']))
     if ((str(networkmode) != 'host') and ('container:' not in networkmode)):
         if (str(networkmode) != 'default'):
             container['ip'] = inspect["NetworkSettings"]["Networks"][networkmode]["IPAddress"]
+            container['ipv6'] = inspect["NetworkSettings"]["Networks"][networkmode]["GlobalIPv6Address"]
         else:
             container['ip'] = inspect["NetworkSettings"]["Networks"]["bridge"]["IPAddress"]
+            container['ipv6'] = inspect["NetworkSettings"]["Networks"]["bridge"]["GlobalIPv6Address"]
     else:
         return False
     return container
@@ -54,9 +59,20 @@ def container_info(containerId):
 
 def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=config['dockerddns']['ttl'],port=config['dockerddns']['dnsport']):
     update = dns.update.Update(config['dockerddns']['zonename'], keyring=keyring, keyname=config['dockerddns']['keyname'])
+    if ("srvrecords" in event):
+       srvrecords=event["srvrecords"].split()
+       for srv in srvrecords:
+          values = srv.split("#")
+          print("%s %s\n" % (values, event['hostname']))
     if (action == 'start' and event['ip'] != '0.0.0.0' ):
         logging.info('[%s] Updating dns %s , setting %s.%s to %s' % (event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'],event['ip']))
         update.replace(event['hostname'], ttl, 'A', event['ip'])
+        if ("ipv6" in event):
+             if event['ipv6'] != "":
+                 print(config)
+                 ipv6addr=event['ipv6'].replace(config['dockerddns']['intprefix'],config['dockerddns']['extprefix'])
+                 logging.info('[IPV6] %s' % ipv6addr)
+                 update.replace(event['hostname'], ttl, 'AAAA', ipv6addr)
     elif (action == 'die' ):
         logging.info('[%s] Removing entry for %s.%s in %s' % (event['name'], event['hostname'], config['dockerddns']['zonename'], dnsserver))
         update.delete(event['hostname'])

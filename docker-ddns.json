@@ -4,6 +4,8 @@
     "dnsport"   : 53,
     "ttl"       : 60,
     "keyname"   : "my.dns.key",
-    "zonename"  : "dynamic.mydomain.ntld"
+    "zonename"  : "dynamic.mydomain.ntld",
+    "intprefix" : "",
+    "extprefix" : ""
   }
 }

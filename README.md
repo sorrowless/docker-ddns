@@ -15,7 +15,9 @@ docker run -it --rm \
     "dnsserver" : "my.dns.server",
     "dnsport"   : 53,
     "keyname"   : "my.dns.key",
-    "zonename"  : "dynamic.mydomain.ntld"
+    "zonename"  : "dynamic.mydomain.ntld",
+    "intprefix" : "",
+    "extprefix" : ""
   }
 }
 
@@ -23,6 +25,12 @@ dnsserver = hostname of bind
 dnsport   = port used by bind , you can change it if 53 is blocked
 keyname   = the keyname
 zonename  = ddns zone
+intprefix = IPv6 prefix on the internal network
+extprefix = IPv6 on the external network
+
+for how to use intprefix and extprefix please check this gists:
+https://gist.github.com/mbartsch/5f0b0ab414d3e901f38388792a88321c
+
 
 ## secrets.json
 
