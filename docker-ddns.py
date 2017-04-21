@@ -62,7 +62,7 @@ def container_info( container ):
   return container
 
 
-def dockerddns( action, event): #, dnsserver = config['dockerddns']['dnsserver'], ttl = config['dockerddns']['ttl'], port = config['dockerddns']['dnsport'] ):
+def dockerddns( action, event ):
   config = loadconfig()
   dnsserver = config['dockerddns']['dnsserver']
   ttl = config['dockerddns']['ttl']
@@ -74,7 +74,6 @@ def dockerddns( action, event): #, dnsserver = config['dockerddns']['dnsserver']
         values = srv.split( "#" )
         print( "%s %s\n" % ( values, event['hostname'] ) )
   if ( action == 'start' and event['ip'] != '0.0.0.0' ):
-    #logging.info( '[%s] Updating dns %s , setting %s.%s to %s' % ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'] ) )
     update.replace( event['hostname'], ttl, 'A', event['ip'] )
     if ( "ipv6" in event ):
       if event['ipv6'] != "":
