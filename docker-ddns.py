@@ -14,19 +14,24 @@ logging.basicConfig( format = '%(asctime)s:%(levelname)s:%(message)s', level = l
 
 configfile = 'docker-ddns.json'
 tsigfile = 'secrets.json'
-tsighandle = open( tsigfile, mode = 'r' )
-logging.debug( 'Loading DNS Key Data' )
-keyring = dns.tsigkeyring.from_text( json.load( tsighandle ) )
 
-logging.debug( 'Loading Config Informaiton' )
-configfh = open( configfile, mode = 'r' )
-config = json.load( configfh )
-tsighandle.close()
-configfh.close()
-# client = docker.Client()
 client = docker.from_env()
-
-
+"""
+LoadConfig
+  Load the configuration options from configfile and tsigfile
+"""
+def loadconfig():
+  logging.debug( 'Loading Config Information' )
+  configfh = open( configfile, mode = 'r' )
+  config = json.load( configfh )
+  configfh.close()
+  
+  logging.debug( 'Loading DNS Key Data' )
+  tsighandle = open( tsigfile, mode = 'r' )
+  config['keyring'] = dns.tsigkeyring.from_text( json.load( tsighandle ) )
+  tsighandle.close()
+  return config
+  
 def startup():
   containers = []
   logging.debug( 'Check running containers and update DDNS' )
@@ -58,7 +63,8 @@ def container_info( container ):
 
 
 def dockerddns( action, event, dnsserver = config['dockerddns']['dnsserver'], ttl = config['dockerddns']['ttl'], port = config['dockerddns']['dnsport'] ):
-  update = dns.update.Update( config['dockerddns']['zonename'], keyring = keyring, keyname = config['dockerddns']['keyname'] )
+  config = loadconfig()
+  update = dns.update.Update( config['dockerddns']['zonename'], keyring = config['keyring'], keyname = config['dockerddns']['keyname'] )
   if ( "srvrecords" in event ):
     srvrecords = event["srvrecords"].split()
     for srv in srvrecords:
