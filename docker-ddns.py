@@ -23,22 +23,26 @@ configfh = open(configfile, mode='r')
 config = json.load(configfh)
 tsighandle.close()
 configfh.close()
-client = docker.Client()
+#client = docker.Client()
+client = docker.from_env()
 
 
 def startup():
     containers = []
     logging.debug('Check running containers and update DDNS')
-    for container in client.containers():
-        containerinfo = container_info(container["Id"])
+    for container in client.containers.list():
+        print(container.id)
+        print(container.attrs)
+        containerinfo = container_info(container.attrs)
         if containerinfo:
             dockerddns('start',containerinfo)
 
 
-def container_info(containerId):
+def container_info(container):
     container = {}
-    inspect = client.inspect_container(containerId)
-    #json.dumps(inspect)
+    json.dumps(container)
+    inspect=json.loads(str(container))
+    print(inspect)
     networkmode = str(inspect["HostConfig"]["NetworkMode"])
     container['hostname'] = inspect["Config"]["Hostname"]
     container['name'] = inspect["Name"].split('/', 1)[1]
