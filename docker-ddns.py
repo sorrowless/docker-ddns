@@ -62,8 +62,11 @@ def container_info( container ):
   return container
 
 
-def dockerddns( action, event, dnsserver = config['dockerddns']['dnsserver'], ttl = config['dockerddns']['ttl'], port = config['dockerddns']['dnsport'] ):
+def dockerddns( action, event): #, dnsserver = config['dockerddns']['dnsserver'], ttl = config['dockerddns']['ttl'], port = config['dockerddns']['dnsport'] ):
   config = loadconfig()
+  dnsserver = config['dockerddns']['dnsserver']
+  ttl = config['dockerddns']['ttl']
+  port = config['dockerddns']['dnsport']
   update = dns.update.Update( config['dockerddns']['zonename'], keyring = config['keyring'], keyname = config['dockerddns']['keyname'] )
   if ( "srvrecords" in event ):
     srvrecords = event["srvrecords"].split()
