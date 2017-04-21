@@ -31,19 +31,15 @@ def startup():
     containers = []
     logging.debug('Check running containers and update DDNS')
     for container in client.containers.list():
-        print(container.id)
-        print(container.attrs)
-        containerinfo = container_info(container.attrs)
+        containerinfo = container_info(json.dumps(container.attrs))
         if containerinfo:
             dockerddns('start',containerinfo)
 
 
 def container_info(container):
-    container = {}
-    json.dumps(container)
-    inspect=json.loads(str(container))
-    print(inspect)
-    networkmode = str(inspect["HostConfig"]["NetworkMode"])
+    inspect=json.loads(container)
+    container={}
+    networkmode = inspect["HostConfig"]["NetworkMode"]
     container['hostname'] = inspect["Config"]["Hostname"]
     container['name'] = inspect["Name"].split('/', 1)[1]
     if ("services" in inspect["Config"]["Labels"]):
@@ -73,7 +69,7 @@ def dockerddns(action, event, dnsserver=config['dockerddns']['dnsserver'], ttl=c
         update.replace(event['hostname'], ttl, 'A', event['ip'])
         if ("ipv6" in event):
              if event['ipv6'] != "":
-                 print(config)
+                 #print(config)
                  ipv6addr=event['ipv6'].replace(config['dockerddns']['intprefix'],config['dockerddns']['extprefix'])
                  logging.info('[IPV6] %s' % ipv6addr)
                  update.replace(event['hostname'], ttl, 'AAAA', ipv6addr)
