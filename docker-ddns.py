@@ -108,25 +108,25 @@ def dockerddns( action, event ):
 def process():
   containerinfo = {}
   events = client.events( decode = True )
+  startup()
   for event in events:
-    if event['Type'] == "container":
+    if event['Type'] == "container" and event['Action'] in ('start','die') :
+      docker_info = json.dumps(event)
+      temp=client.containers.get(event['id'])
+      containerinfo = container_info( json.dumps(temp.attrs) )
       if event['Action'] == 'start':
-        containerinfo = container_info( event['id'] )
         if containerinfo:
           logging.debug( "Container %s is starting with hostname %s and ipAddr %s"
             % ( containerinfo['name'],
               containerinfo['hostname'], containerinfo['ip'] ) )
           dockerddns( event['Action'], containerinfo )
-
       elif event['Action'] == 'die':
-        containerinfo = container_info( event['id'] )
         if containerinfo:
           logging.debug( "Container %s is stopping %s" % 
             ( containerinfo['name'],
             containerinfo['hostname'] ) )
           dockerddns( event['Action'], containerinfo )
 
-startup()
 try:
   process()
 except KeyboardInterrupt:
