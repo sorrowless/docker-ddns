@@ -65,15 +65,14 @@ def dockerddns( action, event, dnsserver = config['dockerddns']['dnsserver'], tt
         values = srv.split( "#" )
         print( "%s %s\n" % ( values, event['hostname'] ) )
   if ( action == 'start' and event['ip'] != '0.0.0.0' ):
-    logging.info( '[%s] Updating dns %s , setting %s.%s to %s' % ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'] ) )
+    #logging.info( '[%s] Updating dns %s , setting %s.%s to %s' % ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'] ) )
     update.replace( event['hostname'], ttl, 'A', event['ip'] )
     if ( "ipv6" in event ):
       if event['ipv6'] != "":
-        # print(config)
         ipv6addr = event['ipv6'].replace( config['dockerddns']['intprefix'], config['dockerddns']['extprefix'] )
-        logging.info( '[IPV6] %s' % ipv6addr )
         update.replace( event['hostname'], ttl, 'AAAA', ipv6addr )
-        logging.info( '[%s] Updating dns %s , setting %s.%s to %s' % ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'] ) )
+        logging.info( '[%s] Updating dns %s , setting %s.%s to %s and %s' % 
+          ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'], ipv6addr ) )
       else:
         logging.info( '[%s] Updating dns %s , setting %s.%s to %s' % ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'] ) )
 
