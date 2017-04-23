@@ -11,9 +11,13 @@ import dns
 import dns.tsigkeyring
 import dns.update
 import dns.query
+import boto3
 
 
 logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', level=logging.INFO)
+logging.getLogger("requests").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("botocore").setLevel(logging.CRITICAL)
 
 CONFIGFILE = 'docker-ddns.json'
 TSIGFILE = 'secrets.json'
@@ -21,7 +25,7 @@ TSIGFILE = 'secrets.json'
 
 def loadconfig():
     """
-    Placeholder
+    Load the configuration file and return a dict
     """
     logging.debug('Loading Config Information')
     configfh = open(CONFIGFILE, mode='r')
@@ -35,7 +39,9 @@ def loadconfig():
 
 def startup(client):
     """
-    Placeholder
+    This will do the initial check of already running containers and register them
+    there is no cleanup if a container dies while this process is down, so you may
+    have some leftovers after a while
     """
     logging.debug('Check running containers and update DDNS')
     for container in client.containers.list():
@@ -46,10 +52,14 @@ def startup(client):
 
 def container_info(container):
     """
-    Placeholder
+    Process the container.attrs from docker client and return our own docker
+    dict
+    this will return blank when the container is run on net=host as no info
+    is provided by docker on ip address
     """
     inspect = json.loads(container)
     container = {}
+    container['fulljson'] = inspect
     networkmode = inspect["HostConfig"]["NetworkMode"]
     container['hostname'] = inspect["Config"]["Hostname"]
     container['name'] = inspect["Name"].split('/', 1)[1]
@@ -63,6 +73,7 @@ def container_info(container):
         container['ipv6'] = \
                 inspect["NetworkSettings"]["Networks"][networkmode]["GlobalIPv6Address"]
     else:
+        print(inspect)
         return False
     return container
 
@@ -78,6 +89,7 @@ def updatedns(action, event):
                                              config['dockerddns']['extprefix'])
             event['ipv6'] = ipv6addr
     if config['dockerddns']['engine'] == "bind":
+        logging.info('Calling bind')
         return dockerbind(action, event, config)
     elif config['dockerddns']['engine'] == "route53":
         return docker53(action, event, config)
@@ -87,7 +99,98 @@ def docker53(action, event, config):
     """
     This function will update a hosted zone registry in AWS route53
     """
-    return True
+    client = boto3.client('route53')
+    changes = []
+
+    try:
+        hostedzone = client.get_hosted_zone(Id=config['dockerddns']['hostedzone'])
+        event['hostname'] = event['hostname'] + "." + hostedzone['HostedZone']['Name']
+    except Exception as exception:
+        logging.exception('%s', exception)
+        return
+
+
+    if action == "start":
+        change = {'Action': 'UPSERT', 'ResourceRecordSet': {'Name': event['hostname'], \
+                'Type': 'A', 'TTL': 300, 'ResourceRecords': [ \
+                {'Value': event['ip']}]}}
+        changes.append(change)
+        if "ipv6" in event:
+            change = {'Action': 'UPSERT', 'ResourceRecordSet': \
+                    {'Name': event['hostname'], 'Type': 'AAAA', \
+                    'TTL': 300, 'ResourceRecords': [ \
+                    {'Value': event['ipv6']}]}}
+            changes.append(change)
+        else:
+            event['ipv6'] = "None"
+            changes.append(change)
+        if event['ipv6']:
+            logging.info('[%s] Updating route53, setting %s to ipv6 %s',\
+                    event['name'], event['hostname'],\
+                    event['ipv6'])
+        logging.info('[%s] Updating route53, setting %s to ipv4 %s',\
+                event['name'], event['hostname'],\
+                event['ip'])
+
+    elif action == "die":
+        action = "DELETE"
+        #
+        #Check for IPv4 Records
+        #
+        response = client.list_resource_record_sets(
+            HostedZoneId=config['dockerddns']['hostedzone'],
+            StartRecordName=event['hostname'],
+            StartRecordType='A',
+            MaxItems='1'
+            )
+        #"""
+        #If the number of ResourceRecordSets is 0, means no current entry exists
+        #"""
+
+        if not response['ResourceRecordSets']:
+            logging.info('RESPONSE FALSE')
+            return False
+
+        #"""
+        #Check for IPv6 Records
+        #"""
+
+        responsev6 = client.list_resource_record_sets(
+            HostedZoneId=config['dockerddns']['hostedzone'],
+            StartRecordName=event['hostname'],
+            StartRecordType='AAAA',
+            MaxItems='1'
+            )
+        #"""
+        #If the number of ResourceRecordSets is 0, means no current entry exists
+        #"""
+        if responsev6['ResourceRecordSets'] \
+                and responsev6['ResourceRecordSets'][0]['Name'] == event['hostname']:
+            change = {'Action': action, 'ResourceRecordSet': \
+                    {'Name': event['hostname'], 'Type': 'AAAA', \
+                    'TTL': 300, 'ResourceRecords': [ \
+                    {'Value': responsev6['ResourceRecordSets'][0]['ResourceRecords'][0]['Value']}]}}
+            changes.append(change)
+            logging.info('[%s] Removing %s from route53 with ipv6 %s',\
+                    event['name'], event['hostname'], \
+                    responsev6['ResourceRecordSets'][0]['ResourceRecords'][0]['Value'])
+
+        if response['ResourceRecordSets'] and \
+                response['ResourceRecordSets'][0]['Name'] == event['hostname']:
+            change = {'Action': action, 'ResourceRecordSet': {'Name': event['hostname'], \
+                    'Type':'A', 'TTL': 300, 'ResourceRecords': [ \
+                    {'Value': \
+                    response['ResourceRecordSets'][0]['ResourceRecords'][0]['Value']}]}}
+            changes.append(change)
+            logging.info('[%s] Removing %s from route53 with ip %s',\
+                    event['name'], event['hostname'], \
+                    response['ResourceRecordSets'][0]['ResourceRecords'][0]['Value'])
+
+    response = client.change_resource_record_sets(
+        HostedZoneId=config['dockerddns']['hostedzone'],
+        ChangeBatch={
+            'Changes': changes
+        })
 
 def dockerbind(action, event, config):
     """
@@ -142,9 +245,8 @@ def dockerbind(action, event, config):
 
 def process():
     """
-    PlaceHolder
+    This is the main function that will be called everytime this run
     """
-    containerinfo = {}
     client = docker.from_env()
     events = client.events(decode=True)
     startup(client)
