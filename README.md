@@ -62,4 +62,7 @@ This guide explain in details the needed steps:
 
 https://www.kirya.net/articles/running-a-secure-ddns-service-with-bind/
 
-
+# TODO
+This is the list of features I'm planning to implement at some point, in no particular order
+   * SRV Records
+   * Cleanup Stale Records
