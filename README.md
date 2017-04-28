@@ -8,7 +8,7 @@ docker run -it --rm \
 
 # Config Needed
 
-## docker-ddns.json 
+## docker-ddns.json
 
 {
   "dockerddns": {
@@ -17,7 +17,8 @@ docker run -it --rm \
     "keyname"   : "my.dns.key",
     "zonename"  : "dynamic.mydomain.ntld",
     "intprefix" : "",
-    "extprefix" : ""
+    "extprefix" : "",
+    "ttl"       : 60
   }
 }
 
@@ -39,7 +40,7 @@ https://gist.github.com/mbartsch/5f0b0ab414d3e901f38388792a88321c
 
 left side  = key name as in named.conf
 right side = mykeyfilesecret in base64 , same as in named.conf
- 
+
 ## bind setup
 in your named.conf you must have:
 
@@ -61,4 +62,7 @@ This guide explain in details the needed steps:
 
 https://www.kirya.net/articles/running-a-secure-ddns-service-with-bind/
 
-
+# TODO
+This is the list of features I'm planning to implement at some point, in no particular order
+   * SRV Records
+   * Cleanup Stale Records
