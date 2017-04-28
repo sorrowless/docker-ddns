@@ -1,5 +1,5 @@
 
-# Hot To Run
+# How To Run
 docker run -it --rm \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /myconfiglocation/secrets.json:/ddns/secrets.json \
@@ -55,6 +55,19 @@ zone "myddnszone.mydomain.xtld" IN {
         file "dynamic/myddnszone.mydomain.xtld.zone";
         allow-update { key "my.key.file"; };
 };
+```
+
+## Allowed arguments
+This container uses pretty new docker client with newest API support. If your
+server uses older API version and refuses to speak with client, you can pass
+an option **-v** or **--apiversion** with needed version number. Example:
+
+```
+$ docker run -it --rm \
+	-v /var/run/docker.sock:/var/run/docker.sock \
+	-v /myconfiglocation/secrets.json:/ddns/secrets.json \
+	-v /myconfiglocation/docker-ddns.json:/ddns/docker-ddns.json \
+	 mbartsch/docker-ddns -v 1.24
 ```
 
 

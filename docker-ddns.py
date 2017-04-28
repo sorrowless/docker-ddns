@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import logging
 import docker
 import json
@@ -15,7 +16,12 @@ logging.basicConfig( format = '%(asctime)s:%(levelname)s:%(message)s', level = l
 configfile = 'docker-ddns.json'
 tsigfile = 'secrets.json'
 
-client = docker.from_env()
+parser = argparse.ArgumentParser(description="Dynamic DNS updater")
+parser.add_argument("-v", "--apiversion", default=None, help="Docker api version")
+args = parser.parse_args()
+if args.apiversion: client = docker.from_env(version=args.apiversion)
+else: client = docker.from_env()
+
 """
 LoadConfig
   Load the configuration options from configfile and tsigfile
