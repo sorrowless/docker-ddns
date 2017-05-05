@@ -31,13 +31,13 @@ def loadconfig():
   configfh = open( configfile, mode = 'r' )
   config = json.load( configfh )
   configfh.close()
-  
+
   logging.debug( 'Loading DNS Key Data' )
   tsighandle = open( tsigfile, mode = 'r' )
   config['keyring'] = dns.tsigkeyring.from_text( json.load( tsighandle ) )
   tsighandle.close()
   return config
-  
+
 def startup():
   containers = []
   logging.debug( 'Check running containers and update DDNS' )
@@ -85,7 +85,7 @@ def dockerddns( action, event ):
       if event['ipv6'] != "":
         ipv6addr = event['ipv6'].replace( config['dockerddns']['intprefix'], config['dockerddns']['extprefix'] )
         update.replace( event['hostname'], ttl, 'AAAA', ipv6addr )
-        logging.info( '[%s] Updating dns %s , setting %s.%s to %s and %s' % 
+        logging.info( '[%s] Updating dns %s , setting %s.%s to %s and %s' %
           ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'], ipv6addr ) )
       else:
         logging.info( '[%s] Updating dns %s , setting %s.%s to %s' % ( event['name'], dnsserver, event['hostname'], config['dockerddns']['zonename'], event['ip'] ) )
@@ -93,7 +93,7 @@ def dockerddns( action, event ):
   elif ( action == 'die' ):
     logging.info( '[%s] Removing entry for %s.%s in %s' % ( event['name'], event['hostname'], config['dockerddns']['zonename'], dnsserver ) )
     update.delete( event['hostname'] )
-  try:    
+  try:
     response = dns.query.tcp( update, dnsserver, timeout = 10, port = port )
   except ( socket.error, dns.exception.Timeout ):
     logging.error( 'Timeout updating DNS' )
@@ -108,7 +108,7 @@ def dockerddns( action, event ):
     response = "BadKey"
     pass
 
-  if response.rcode() != 0: 
+  if type(response) != str and response.rcode() != 0:
     logging.error( "[%s] Error Reported while updating %s (%s/%s)" % ( event['name'], event['hostname'], dns.rcode.to_text( response.rcode() ), response.rcode() ) )
 
 def process():
@@ -128,7 +128,7 @@ def process():
           dockerddns( event['Action'], containerinfo )
       elif event['Action'] == 'die':
         if containerinfo:
-          logging.debug( "Container %s is stopping %s" % 
+          logging.debug( "Container %s is stopping %s" %
             ( containerinfo['name'],
             containerinfo['hostname'] ) )
           dockerddns( event['Action'], containerinfo )
